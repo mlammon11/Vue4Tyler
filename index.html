@@ -8,34 +8,14 @@
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
 </head>
 <body>
-    <nav  
-        :class="[`navbar-${theme}`, `bg-${theme}`, 'navbar', 'navbar-expand-lg']"
-    >
-        <div class="container-fluid">
-            <a href="#" class="navbar-brand">My Vue</a>
-            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                <li v-for="(page, index) in pages" class="nav-item" :key="index"> 
-                    <!-- v-for is a Vue directive which are special HTML attributes with the prefix v- that give the HTML tag extra functionality-->
-                    <a v-bind:href="page.url" :title="page.title" class="nav-link" :class="{active: activePage == index}" aria-current="page" @click.prevent="activePage = index">
-                        <!-- @click.prevent loads the content of the index's page but doesn't go to the href link-->
-                        <!-- :class = {property state: condition} -->
-                        {{page.text}}
-                    </a> <!-- v-bind (or just use ':') binds to a JS expression -->
-                </li>
-            </ul>
-            <form class="d-flex">
-                <button 
-                    class="btn btn-primary"
-                    @click.prevent="changeTheme()"
-                    >
-                    Toggle
-                </button>
-            </form>
-        </div>
-    </nav>
+    
+    <!-- binding date to props in order to dynamically update values -->
+    <nav-bar :pages="pages" :active-page="activePage" :nav-link-click="(index) => activePage = index"> <!-- here we are inside the parent class -->
+
+    </nav-bar>
 
     <!-- Props are used to define properties of components (use lowercase names followe by '-' if there are multiple words per name)-->
-    <page-content page-title="Page Title" page-content="Page Content">
+    <page-content :page="pages[activePage]">
 
 
     </page-content>
@@ -57,13 +37,58 @@
                 return{
                     activePage: 0,
                     // useDarkNavbar: true,
-                    theme: 'dark',
                     pages: [
                         {pageTitle: 'Home', content: 'Welcome to the home page', text: 'Home', url: 'index.html', title: 'Leads to home page'},
                         {pageTitle: 'About', content: 'Welcome to the about page', text: 'About', url: 'about.html', title: 'Leads to about page'},
                         {pageTitle: 'Contact', content: 'Welcome to the contact page', text: 'Contact', url: 'contact.html', title: 'Leads to contact page'}
                     ],
                 };
+            },
+        });
+
+        app.component('page-content', {
+            props: ['page'], //props connect to the props defined in the component header (use camelcase here) -> props create objects
+            template: `
+            <div class="container">
+                <h1>{{page.pageTitle}}</h1>
+                <p>{{page.content}}</p>
+            </div>
+            `
+        })
+
+        app.component('nav-bar',{
+            props: ['pages', 'activePage', 'navLinkClick'], //props are read only (data flows parent (app) to child (component) so changing data in child would not reflect in parent)
+            template:`
+            <nav :class="[\`navbar-\${theme}\`, \`bg-\${theme}\`, 'navbar', 'navbar-expand-lg']">
+                <div class="container-fluid">
+                    <a href="#" class="navbar-brand">My Vue</a>
+                    <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                        <li v-for="(page, index) in pages" class="nav-item" :key="index"> 
+                            <!-- v-for is a Vue directive which are special HTML attributes with the prefix v- that give the HTML tag extra functionality-->
+                            <a v-bind:href="page.url" :title="page.title" class="nav-link" 
+                                :class="{active: activePage == index}" aria-current="page" @click.prevent="navLinkClick(index)">
+                                <!-- @click.prevent="navLinkClick(index)" -> we are using the function defined by parent in the body (nav-bar) and passing the current value of index -->
+                                <!-- @click.prevent loads the content of the index's page but doesn't go to the href link-->
+                                <!-- :class = {property state: condition} -->
+                                {{page.text}}
+                            </a> <!-- v-bind (or just use ':') binds to a JS expression -->                            
+                        </li>
+                    </ul>
+                    <form class="d-flex">
+                        <button 
+                            class="btn btn-primary"
+                            @click.prevent="changeTheme()"
+                            >                                
+                            Toggle
+                        </button>
+                    </form>
+                </div>
+            </nav>
+            `,
+            data(){
+                return{
+                    theme: 'dark',
+                }
             },
             methods:{
                 changeTheme(){
@@ -75,17 +100,7 @@
 
                     this.theme = theme;
                 }
-            }
-        });
-
-        app.component('page-content', {
-            props: ['pageTitle', 'pageContent'], //props connect to the props defined in the component header (use camelcase here)
-            template: `
-            <div class="container">
-                <h1>{{pageTitle}}</h1>
-                <p>{{pageContent}}</p>
-            </div>
-            `
+            },
         })
 
         app.mount('body');  //all values within the "data" are mounted, therefore are initialized at the beginning, not dynamic
